@@ -1,0 +1,1853 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GBoS GEOAI | Gambia Urban Data Intelligence</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
+
+<style>
+:root{
+ --bg:#07111e;
+ --panel:#101e30;
+ --panel2:#14263b;
+ --border:#263c55;
+ --text:#edf4fc;
+ --muted:#91a6bd;
+ --cyan:#35d2cc;
+ --blue:#5599ff;
+ --green:#50d69a;
+ --orange:#ffb45b;
+ --red:#ff7272;
+}
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ font-family:Inter,Segoe UI,Arial,sans-serif;
+ font-size:13px;
+}
+header{
+ background:linear-gradient(110deg,#102b43,#091525);
+ border-bottom:1px solid var(--border);
+ padding:20px 25px;
+}
+.brand{
+ color:var(--cyan);
+ font-weight:800;
+ font-size:11px;
+ letter-spacing:2px;
+}
+.headerrow{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:15px;
+}
+h1{
+ margin:7px 0;
+ font-size:27px;
+ letter-spacing:-.6px;
+}
+.subtitle{color:var(--muted);font-size:12px}
+.status{
+ border:1px solid var(--border);
+ padding:9px 13px;
+ color:var(--green);
+ border-radius:5px;
+ font-size:10px;
+ letter-spacing:1px;
+}
+.layout{
+ display:grid;
+ grid-template-columns:295px minmax(400px,1fr) 335px;
+ gap:11px;
+ padding:12px;
+ max-width:1900px;
+ margin:auto;
+ align-items:start;
+}
+.panel{
+ background:var(--panel);
+ border:1px solid var(--border);
+ border-radius:7px;
+ overflow:hidden;
+ min-width:0;
+}
+.panel-title{
+ padding:13px;
+ border-bottom:1px solid var(--border);
+ color:var(--cyan);
+ font-size:11px;
+ font-weight:800;
+ letter-spacing:1.5px;
+}
+.panel-content{
+ padding:13px;
+ max-height:calc(100vh - 145px);
+ overflow-y:auto;
+}
+.section{margin-bottom:19px}
+.section h3{
+ font-size:10px;
+ letter-spacing:1.3px;
+ color:#d6e6f6;
+ margin:0 0 9px;
+ text-transform:uppercase;
+}
+label{
+ display:block;
+ color:var(--muted);
+ font-size:11px;
+ margin:9px 0 4px;
+}
+select,input,textarea{
+ width:100%;
+ background:#091626;
+ border:1px solid var(--border);
+ color:var(--text);
+ padding:9px;
+ border-radius:4px;
+ font-size:11px;
+}
+input[type=file]{padding:7px}
+button{
+ cursor:pointer;
+ background:#19314a;
+ border:1px solid var(--border);
+ color:var(--text);
+ padding:9px 11px;
+ border-radius:4px;
+ font-size:10px;
+ font-weight:700;
+}
+button:hover{border-color:var(--cyan)}
+button.primary{background:#087c7c;border-color:#159e9a}
+button.danger{background:#532a35}
+.btnrow{display:flex;gap:6px;margin-top:8px}
+.btnrow button{flex:1}
+.checkgrid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+}
+.checkgrid label{
+ display:flex;
+ gap:6px;
+ align-items:center;
+ color:#d7e5f2;
+ margin:0;
+}
+.checkgrid input{width:auto}
+.hint{
+ color:var(--muted);
+ font-size:10px;
+ line-height:1.6;
+ margin-top:6px;
+}
+#map{height:590px;width:100%;background:#0b1928}
+.map-tools{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:7px;
+ padding:9px;
+ border-bottom:1px solid var(--border);
+}
+.map-tools select{width:auto;min-width:115px}
+.map-tools button{padding:8px}
+.map-tools small{color:var(--muted);margin-left:auto}
+.kpis{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:8px;
+ padding:10px;
+}
+.kpi{
+ padding:11px;
+ background:var(--panel2);
+ border:1px solid var(--border);
+ border-radius:5px;
+ min-width:0;
+}
+.kpi small{font-size:9px;color:var(--muted)}
+.kpi strong{
+ display:block;
+ font-size:20px;
+ margin-top:5px;
+ overflow:hidden;
+ text-overflow:ellipsis;
+ white-space:nowrap;
+}
+.chartbox{
+ background:var(--panel2);
+ border:1px solid var(--border);
+ border-radius:6px;
+ padding:11px;
+ margin-bottom:12px;
+}
+.chartbox h3{
+ font-size:10px;
+ color:#d7e6f4;
+ letter-spacing:1px;
+ margin:0 0 12px;
+}
+.chartbox canvas{max-height:220px}
+.metric-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:7px;
+}
+.metric{
+ background:#0a1727;
+ border:1px solid var(--border);
+ border-radius:4px;
+ padding:9px;
+}
+.metric strong{display:block;font-size:14px}
+.metric small{color:var(--muted);font-size:9px}
+.notice{
+ padding:10px;
+ background:#29251b;
+ border-left:3px solid var(--orange);
+ font-size:10px;
+ color:#f0d8a9;
+ line-height:1.6;
+ margin:8px 0;
+}
+.notice.good{
+ background:#10291f;
+ border-color:var(--green);
+ color:#b8f1d1;
+}
+table{width:100%;border-collapse:collapse;font-size:10px}
+th,td{
+ text-align:left;
+ padding:7px;
+ border-bottom:1px solid var(--border);
+}
+th{color:var(--muted)}
+.legend{
+ padding:10px;
+ background:#0c1929;
+ border:1px solid var(--border);
+ font-size:10px;
+ line-height:1.9;
+}
+.swatch{
+ display:inline-block;
+ width:11px;
+ height:10px;
+ margin-right:6px;
+}
+footer{
+ padding:17px 23px;
+ border-top:1px solid var(--border);
+ color:var(--muted);
+ font-size:10px;
+ display:flex;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:10px;
+}
+#log{
+ max-height:110px;
+ overflow:auto;
+ white-space:pre-wrap;
+ font-size:10px;
+ color:var(--muted);
+}
+.tabs{
+ display:flex;
+ gap:5px;
+ flex-wrap:wrap;
+ margin-bottom:10px;
+}
+.tab{
+ padding:7px 9px;
+ border:1px solid var(--border);
+ border-radius:4px;
+ color:var(--muted);
+ cursor:pointer;
+ font-size:10px;
+}
+.tab.active{
+ background:#126b73;
+ color:white;
+ border-color:var(--cyan);
+}
+.hidden{display:none!important}
+@media(max-width:1200px){
+ .layout{grid-template-columns:280px 1fr}
+ .right{grid-column:1/-1}
+ .right .panel-content{
+  max-height:none;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+ }
+}
+@media(max-width:750px){
+ .layout{grid-template-columns:1fr}
+ .right{grid-column:auto}
+ .right .panel-content{display:block}
+ .panel-content{max-height:none}
+ #map{height:470px}
+ .kpis{grid-template-columns:repeat(2,1fr)}
+ h1{font-size:21px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="headerrow">
+  <div>
+   <div class="brand">GBoS GEOAI • SILKYGEO SPATIAL INTELLIGENCE</div>
+   <h1>Gambia Urban Data Analytics & Spatial Intelligence</h1>
+   <div class="subtitle">
+    Population • Demographics • Housing • Urban Growth • Land Use • Infrastructure • Environment
+   </div>
+  </div>
+  <div class="status" id="systemStatus">SYSTEM INITIALISED</div>
+ </div>
+</header>
+
+<main class="layout">
+
+<!-- LEFT PANEL -->
+<aside class="panel">
+ <div class="panel-title">01 / CONTROLS & DATA SOURCES</div>
+ <div class="panel-content">
+
+  <div class="section">
+   <h3>01. Geographic selection</h3>
+
+   <label>Geographic level</label>
+   <select id="geoLevel">
+    <option value="national">National</option>
+    <option value="region">Region / LGA</option>
+    <option value="district">District</option>
+    <option value="ward">Ward</option>
+    <option value="ea">Enumeration Area</option>
+    <option value="settlement">Settlement</option>
+   </select>
+
+   <label>Region / LGA</label>
+   <select id="region"><option value="">All regions</option></select>
+
+   <label>District</label>
+   <select id="district"><option value="">All districts</option></select>
+
+   <label>Ward</label>
+   <select id="ward"><option value="">All wards</option></select>
+
+   <label>Enumeration Area</label>
+   <select id="ea"><option value="">All EAs</option></select>
+
+   <div class="btnrow">
+    <button class="primary" id="applyGeo">Apply selection</button>
+    <button id="resetGeo">Reset</button>
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>02. Geographic boundary data</h3>
+
+   <label>Upload Gambia GeoJSON</label>
+   <input type="file" id="boundaryFile" accept=".geojson,.json">
+
+   <div class="hint">
+    Supports GBoS national, regional, district, ward and EA GeoJSON files.
+    Recommended coordinate system: WGS84 EPSG:4326.
+   </div>
+
+   <div class="btnrow">
+    <button class="primary" id="loadAdmin">Get Gambia ADM1</button>
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>03. Demographic and population data</h3>
+
+   <label>Population / age-group Excel</label>
+   <input type="file" id="ageFile" accept=".xlsx,.xls,.csv">
+
+   <label>Population data CSV</label>
+   <input type="file" id="populationFile" accept=".csv,.xlsx,.xls">
+
+   <label>Population measure</label>
+   <select id="populationMeasure">
+    <option value="population1">Population 1</option>
+    <option value="population2">Population 2</option>
+   </select>
+
+   <div class="hint">
+    Age workbook supports fields such as lga, hdistrict, hward,
+    hsettlement, SETTLEMENT_Name, age_category, population1 and population2.
+    Column matching is automatic where possible.
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>04. Additional indicator datasets</h3>
+
+   <label>Housing and socioeconomic CSV</label>
+   <input type="file" id="housingFile" accept=".csv,.xlsx,.xls">
+
+   <label>Land-use / built-up CSV</label>
+   <input type="file" id="landFile" accept=".csv,.xlsx,.xls">
+
+   <label>Road / infrastructure CSV</label>
+   <input type="file" id="roadFile" accept=".csv,.xlsx,.xls">
+
+   <label>Environment / flood CSV</label>
+   <input type="file" id="environmentFile" accept=".csv,.xlsx,.xls">
+
+   <label>General indicator CSV</label>
+   <input type="file" id="generalFile" accept=".csv,.xlsx,.xls">
+  </div>
+
+  <div class="section">
+   <h3>05. Analytical theme</h3>
+   <select id="theme">
+    <option value="population">Population & demographics</option>
+    <option value="housing">Housing</option>
+    <option value="land">Land use & urban expansion</option>
+    <option value="economy">Employment & economy</option>
+    <option value="transport">Transportation</option>
+    <option value="environment">Environment & climate</option>
+    <option value="health">Health & social vulnerability</option>
+   </select>
+
+   <label>Map indicator</label>
+   <select id="indicator">
+    <option value="population">Population</option>
+    <option value="population_density">Population density</option>
+    <option value="population_change">Population change (%)</option>
+    <option value="average_age">Mean age</option>
+    <option value="dependency">Age dependency ratio (%)</option>
+    <option value="household_size">Average household size</option>
+    <option value="builtup">Built-up area (ha)</option>
+    <option value="builtup_share">Built-up share (%)</option>
+    <option value="land_efficiency">Land-use efficiency</option>
+    <option value="employment">Employment rate (%)</option>
+    <option value="road_density">Road density (km/km²)</option>
+    <option value="tree_cover">Tree cover (%)</option>
+    <option value="flood">Flood exposure (%)</option>
+   </select>
+
+   <label>Reference year</label>
+   <select id="year">
+    <option>2026</option>
+    <option>2025</option>
+    <option>2023</option>
+    <option>2013</option>
+    <option>2003</option>
+    <option>1993</option>
+   </select>
+
+   <label>Classification method</label>
+   <select id="classification">
+    <option value="quantile">Quantile</option>
+    <option value="equal">Equal interval</option>
+   </select>
+
+   <div class="btnrow">
+    <button class="primary" id="runAnalysis">RUN ANALYSIS</button>
+    <button id="clearData">CLEAR FILTERS</button>
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>06. Map layers</h3>
+   <div class="checkgrid">
+    <label><input type="checkbox" id="showBoundary" checked> Boundaries</label>
+    <label><input type="checkbox" id="showLabels"> Labels</label>
+    <label><input type="checkbox" id="showPoints"> Centroids</label>
+    <label><input type="checkbox" id="showGrid"> Grid</label>
+   </div>
+
+   <label>Basemap</label>
+   <select id="basemap">
+    <option value="street">Street</option>
+    <option value="satellite">Satellite</option>
+    <option value="terrain">Terrain</option>
+    <option value="dark">Dark</option>
+   </select>
+
+   <label>Reference grid size</label>
+   <select id="gridSize">
+    <option value="2">2 km</option>
+    <option value="5" selected>5 km</option>
+    <option value="10">10 km</option>
+    <option value="20">20 km</option>
+   </select>
+  </div>
+
+  <div class="section">
+   <h3>07. Export</h3>
+   <div class="btnrow">
+    <button id="exportCSV">Export CSV</button>
+    <button id="exportGeo">Export GeoJSON</button>
+   </div>
+   <div class="btnrow">
+    <button id="exportAge">Export age profile</button>
+    <button id="exportReport">Export summary</button>
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>Processing log</h3>
+   <div id="log">Dashboard ready. Upload data to begin.</div>
+  </div>
+
+ </div>
+</aside>
+
+<!-- MAP PANEL -->
+<section class="panel">
+ <div class="panel-title">02 / INTERACTIVE GIS & SPATIAL VISUALISATION</div>
+
+ <div class="map-tools">
+  <select id="mapStyle">
+   <option value="choropleth">Choropleth</option>
+   <option value="outline">Boundary outline</option>
+  </select>
+
+  <select id="mapSize">
+   <option value="normal">Normal view</option>
+   <option value="large">Large view</option>
+  </select>
+
+  <button id="zoomGambia">Gambia extent</button>
+  <small>WGS84 • EPSG:4326</small>
+ </div>
+
+ <div id="map"></div>
+
+ <div class="kpis">
+  <div class="kpi">
+   <small>GEOGRAPHIC UNITS</small>
+   <strong id="kUnits">0</strong>
+  </div>
+  <div class="kpi">
+   <small>POPULATION / VALUE</small>
+   <strong id="kPopulation">—</strong>
+  </div>
+  <div class="kpi">
+   <small>MEAN INDICATOR</small>
+   <strong id="kMean">—</strong>
+  </div>
+  <div class="kpi">
+   <small>DATA COVERAGE</small>
+   <strong id="kCoverage">0%</strong>
+  </div>
+ </div>
+
+ <div style="padding:10px">
+  <div class="legend" id="legend">
+   Upload boundary and indicator datasets to generate the map legend.
+  </div>
+ </div>
+</section>
+
+<!-- ANALYTICS PANEL -->
+<aside class="panel right">
+ <div class="panel-title">03 / ANALYTICS & INTELLIGENCE</div>
+ <div class="panel-content">
+
+  <div class="tabs">
+   <div class="tab active" data-tab="overview">Overview</div>
+   <div class="tab" data-tab="demographic">Demography</div>
+   <div class="tab" data-tab="urban">Urban</div>
+   <div class="tab" data-tab="quality">Quality</div>
+  </div>
+
+  <div id="overviewTab">
+   <div class="chartbox">
+    <h3>INDICATOR DISTRIBUTION</h3>
+    <canvas id="distributionChart"></canvas>
+   </div>
+
+   <div class="chartbox">
+    <h3>SPATIAL UNIT COMPARISON</h3>
+    <canvas id="comparisonChart"></canvas>
+   </div>
+
+   <div class="chartbox">
+    <h3>THEMATIC ANALYTICS</h3>
+    <div class="metric-grid">
+     <div class="metric"><strong id="mPopulation">—</strong><small>Population records</small></div>
+     <div class="metric"><strong id="mAgeGroups">—</strong><small>Age categories</small></div>
+     <div class="metric"><strong id="mSettlements">—</strong><small>Settlements</small></div>
+     <div class="metric"><strong id="mMissing">—</strong><small>Missing values</small></div>
+    </div>
+   </div>
+  </div>
+
+  <div id="demographicTab" class="hidden">
+   <div class="chartbox">
+    <h3>POPULATION BY AGE CATEGORY</h3>
+    <canvas id="ageChart"></canvas>
+   </div>
+
+   <div class="chartbox">
+    <h3>POPULATION PYRAMID / AGE PROFILE</h3>
+    <canvas id="pyramidChart"></canvas>
+   </div>
+
+   <div class="metric-grid">
+    <div class="metric"><strong id="mYoung">—</strong><small>Children / young</small></div>
+    <div class="metric"><strong id="mWorking">—</strong><small>Working age</small></div>
+    <div class="metric"><strong id="mOlder">—</strong><small>Older population</small></div>
+    <div class="metric"><strong id="mDependency">—</strong><small>Dependency ratio</small></div>
+   </div>
+  </div>
+
+  <div id="urbanTab" class="hidden">
+   <div class="chartbox">
+    <h3>URBAN DEVELOPMENT INDICATORS</h3>
+    <canvas id="urbanChart"></canvas>
+   </div>
+
+   <div class="notice">
+    Built-up area, urban expansion and land-use efficiency are calculated
+    only when appropriate land-cover, population and area fields are available.
+   </div>
+
+   <div class="metric-grid">
+    <div class="metric"><strong id="mBuiltup">—</strong><small>Built-up area (ha)</small></div>
+    <div class="metric"><strong id="mRoad">—</strong><small>Road length (km)</small></div>
+    <div class="metric"><strong id="mDensity">—</strong><small>Population density</small></div>
+    <div class="metric"><strong id="mLandEfficiency">—</strong><small>Land-use efficiency</small></div>
+   </div>
+  </div>
+
+  <div id="qualityTab" class="hidden">
+   <div id="qualityReport" class="notice">
+    No datasets have been loaded.
+   </div>
+
+   <div class="chartbox">
+    <h3>DATA COVERAGE</h3>
+    <canvas id="coverageChart"></canvas>
+   </div>
+
+   <div class="hint">
+    Quality assessment includes missing values, geographic matching,
+    duplicate records and potential boundary mismatch.
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>Geographic unit table</h3>
+   <div style="max-height:260px;overflow:auto">
+    <table>
+     <thead><tr><th>Geographic unit</th><th>Value</th></tr></thead>
+     <tbody id="summaryTable">
+      <tr><td colspan="2">No data loaded</td></tr>
+     </tbody>
+    </table>
+   </div>
+  </div>
+
+  <div class="section">
+   <h3>Methodology and limitations</h3>
+   <div class="notice">
+    Spatial statistics depend on source data, geographic identifiers,
+    measurement units and reference year. Area-level statistics should
+    not be interpreted as individual-level characteristics.
+   </div>
+   <div class="hint">
+    Consider the modifiable areal unit problem (MAUP), ecological fallacy,
+    boundary edge effects, missing observations and self-reporting bias.
+    Use consistent geographic boundaries when comparing census years.
+   </div>
+  </div>
+
+ </div>
+</aside>
+</main>
+
+<footer>
+ <span>Produced by Ansu Singhateh | GIS Analyst | GIS / Cartography Unit | Gambia Bureau of Statistics</span>
+ <span>GBoS GEOAI • Research and educational use</span>
+</footer>
+
+<script>
+// ======================================================
+// 1. GLOBAL CONFIGURATION
+// ======================================================
+
+const $ = id => document.getElementById(id);
+
+const state = {
+ boundaries:null,
+ records:[],
+ ageRows:[],
+ ageFields:{},
+ populationRows:[],
+ otherRows:[],
+ charts:{},
+ boundaryLayer:null,
+ pointLayer:null,
+ gridLayer:null,
+ baseLayers:{},
+ activeFeatures:[],
+ demo:false
+};
+
+const indicators = {
+ population:{name:"Population",unit:"persons"},
+ population_density:{name:"Population density",unit:"persons/km²"},
+ population_change:{name:"Population change",unit:"%"},
+ average_age:{name:"Average age",unit:"years"},
+ dependency:{name:"Age dependency ratio",unit:"%"},
+ household_size:{name:"Average household size",unit:"persons"},
+ builtup:{name:"Built-up area",unit:"ha"},
+ builtup_share:{name:"Built-up share",unit:"%"},
+ land_efficiency:{name:"Land-use efficiency",unit:"persons/ha"},
+ employment:{name:"Employment rate",unit:"%"},
+ road_density:{name:"Road density",unit:"km/km²"},
+ tree_cover:{name:"Tree cover",unit:"%"},
+ flood:{name:"Flood exposure",unit:"%"}
+};
+
+const aliases = {
+ region:["rco","rconame","region","lganame","lga"],
+ district:["distname","district","hdistrict"],
+ ward:["wardname","ward","hward"],
+ ea:["feacode","eaname","ea","ea_code","enumeration_area"],
+ settlement:["settlement_name","hsettlement","settlement","name"],
+ population:["population","pop","total_population","population1"],
+ age:["age_category","agegroup","age_group","age"],
+ value:["value","estimate","population1","population2"]
+};
+
+function norm(s){
+ return String(s??"").toLowerCase().replace(/[^a-z0-9]/g,"");
+}
+
+function prop(obj,names){
+ if(!obj)return "";
+ const keys=Object.keys(obj);
+ for(const n of names){
+  const key=keys.find(k=>norm(k)===norm(n));
+  if(key!==undefined)return obj[key];
+ }
+ return "";
+}
+
+function num(v){
+ if(v===null||v===undefined||v==="")return null;
+ const n=Number(String(v).replace(/,/g,"").replace(/%/g,""));
+ return Number.isFinite(n)?n:null;
+}
+
+function log(msg){$("log").textContent=msg;}
+
+function fmt(v){
+ if(v===null||v===undefined||!Number.isFinite(Number(v)))return "—";
+ return Number(v).toLocaleString(undefined,{maximumFractionDigits:2});
+}
+
+// ======================================================
+// 2. MAP INITIALISATION
+// ======================================================
+
+const map=L.map("map").setView([13.45,-15.5],8);
+
+state.baseLayers={
+ street:L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {attribution:"© OpenStreetMap"}
+ ),
+ satellite:L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {attribution:"Esri"}
+ ),
+ terrain:L.tileLayer(
+  "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+  {attribution:"© OpenTopoMap"}
+ ),
+ dark:L.tileLayer(
+  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  {attribution:"© CARTO"}
+ )
+};
+
+state.baseLayers.street.addTo(map);
+
+function setBasemap(){
+ Object.values(state.baseLayers).forEach(l=>map.removeLayer(l));
+ state.baseLayers[$("basemap").value].addTo(map);
+}
+
+$("basemap").onchange=setBasemap;
+
+const GAMBIA_BOUNDS=[[13.0,-16.9],[13.9,-13.7]];
+
+$("zoomGambia").onclick=()=>map.fitBounds(GAMBIA_BOUNDS);
+
+// ======================================================
+// 3. BOUNDARY DATA
+// ======================================================
+
+function featureName(f){
+ const p=f.properties||{};
+ return String(
+  prop(p,[
+   "eaname","feacode","wardname","distname",
+   "lganame","name","shapeName","NAME_1",
+   "settlement_name"
+  ])||"Unnamed"
+ );
+}
+
+function regionOf(f){
+ return String(prop(f.properties,aliases.region)||"");
+}
+
+function districtOf(f){
+ return String(prop(f.properties,aliases.district)||"");
+}
+
+function wardOf(f){
+ return String(prop(f.properties,aliases.ward)||"");
+}
+
+function eaOf(f){
+ return String(prop(f.properties,aliases.ea)||"");
+}
+
+function populateGeoSelectors(){
+ if(!state.boundaries)return;
+
+ const fs=state.boundaries.features||[];
+
+ const configs=[
+  ["region",[...new Set(fs.map(regionOf).filter(Boolean))],"All regions"],
+  ["district",[...new Set(fs.map(districtOf).filter(Boolean))],"All districts"],
+  ["ward",[...new Set(fs.map(wardOf).filter(Boolean))],"All wards"],
+  ["ea",[...new Set(fs.map(eaOf).filter(Boolean))],"All EAs"]
+ ];
+
+ configs.forEach(([id,values,label])=>{
+  const el=$(id);
+  const old=el.value;
+  el.innerHTML=`<option value="">${label}</option>`;
+  values.sort().forEach(v=>{
+   const o=document.createElement("option");
+   o.value=v;o.textContent=v;
+   el.appendChild(o);
+  });
+  if(values.includes(old))el.value=old;
+ });
+}
+
+$("boundaryFile").addEventListener("change",async e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+
+ try{
+  const json=JSON.parse(await file.text());
+
+  if(json.type!=="FeatureCollection"||!Array.isArray(json.features)){
+   throw Error("Expected a GeoJSON FeatureCollection");
+  }
+
+  state.boundaries=json;
+  populateGeoSelectors();
+  $("systemStatus").textContent="BOUNDARIES LOADED";
+  log(`Loaded ${json.features.length} geographic features.`);
+  runAnalysis();
+
+ }catch(err){
+  log("Boundary error: "+err.message);
+ }
+});
+
+// Automatic ADM1 boundary retrieval.
+// GBoS district, ward and EA data should be uploaded separately.
+
+$("loadAdmin").onclick=async()=>{
+ try{
+  log("Retrieving Gambia ADM1 boundaries...");
+  const meta=await fetch(
+   "https://www.geoboundaries.org/api/current/gbOpen/GMB/ADM1/"
+  ).then(r=>{
+   if(!r.ok)throw Error("Boundary metadata unavailable");
+   return r.json();
+  });
+
+  if(!meta.gjDownloadURL)throw Error("GeoJSON download URL unavailable");
+
+  const geo=await fetch(meta.gjDownloadURL).then(r=>{
+   if(!r.ok)throw Error("GeoJSON download failed");
+   return r.json();
+  });
+
+  state.boundaries=geo;
+  populateGeoSelectors();
+  $("geoLevel").value="region";
+  $("systemStatus").textContent="GAMBIA ADM1 LOADED";
+  log("Gambia ADM1 boundaries loaded. Upload GBoS boundaries for lower-level analysis.");
+  runAnalysis();
+
+ }catch(err){
+  log("Automatic boundary retrieval failed: "+err.message+
+   ". Upload a Gambia GeoJSON file instead.");
+ }
+};
+
+// ======================================================
+// 4. GEOGRAPHIC FILTERING
+// ======================================================
+
+function getFeatures(){
+ if(!state.boundaries)return [];
+
+ const rg=$("region").value;
+ const ds=$("district").value;
+ const wd=$("ward").value;
+ const ea=$("ea").value;
+
+ return state.boundaries.features.filter(f=>
+  (!rg||regionOf(f)===rg)&&
+  (!ds||districtOf(f)===ds)&&
+  (!wd||wardOf(f)===wd)&&
+  (!ea||eaOf(f)===ea)
+ );
+}
+
+$("applyGeo").onclick=runAnalysis;
+
+$("resetGeo").onclick=()=>{
+ ["region","district","ward","ea"].forEach(id=>$(id).value="");
+ runAnalysis();
+};
+
+$("clearData").onclick=()=>{
+ ["region","district","ward","ea"].forEach(id=>$(id).value="");
+ $("indicator").value="population";
+ $("theme").value="population";
+ $("year").value="2026";
+ runAnalysis();
+};
+
+// ======================================================
+// 5. EXCEL AND CSV DATA IMPORT
+// ======================================================
+
+async function readTabular(file){
+ const extension=file.name.split(".").pop().toLowerCase();
+
+ if(extension==="csv"){
+  const text=await file.text();
+  const parsed=Papa.parse(text,{
+   header:true,
+   skipEmptyLines:true
+  });
+  return parsed.data;
+ }
+
+ const buffer=await file.arrayBuffer();
+ const workbook=XLSX.read(buffer,{type:"array"});
+ const sheet=workbook.Sheets[workbook.SheetNames[0]];
+
+ return XLSX.utils.sheet_to_json(sheet,{defval:""});
+}
+
+function detectAgeFields(rows){
+ if(!rows.length)return {};
+
+ const keys=Object.keys(rows[0]);
+ const choose=names=>keys.find(k=>names.some(n=>norm(k)===norm(n)))||"";
+
+ return {
+  region:choose(["lga","region","rco"]),
+  district:choose(["hdistrict","distname","district"]),
+  ward:choose(["hward","wardname","ward"]),
+  settlement:choose(["hsettlement","settlement_name","settlement"]),
+  age:choose(["age_category","agegroup","age_group"]),
+  pop1:choose(["population1"]),
+  pop2:choose(["population2"])
+ };
+}
+
+async function importAgeFile(file){
+ const rows=await readTabular(file);
+ state.ageRows=rows;
+ state.ageFields=detectAgeFields(rows);
+
+ $("systemStatus").textContent="AGE DATA LOADED";
+
+ log(
+  `Age workbook loaded: ${rows.length} records.\n`+
+  `Detected fields: ${JSON.stringify(state.ageFields)}`
+ );
+
+ updateAgeAnalytics();
+ runAnalysis();
+}
+
+$("ageFile").addEventListener("change",e=>{
+ const file=e.target.files[0];
+ if(file)importAgeFile(file).catch(err=>log("Age import failed: "+err.message));
+});
+
+async function importOther(file,type){
+ const rows=await readTabular(file);
+ state.otherRows=state.otherRows.filter(r=>r._source!==type);
+
+ rows.forEach(r=>state.otherRows.push({...r,_source:type}));
+
+ log(`${type} dataset loaded: ${rows.length} rows.`);
+ runAnalysis();
+}
+
+[
+ ["populationFile","population"],
+ ["housingFile","housing"],
+ ["landFile","land"],
+ ["roadFile","road"],
+ ["environmentFile","environment"],
+ ["generalFile","general"]
+].forEach(([id,type])=>{
+ $(id).addEventListener("change",e=>{
+  const file=e.target.files[0];
+  if(file)importOther(file,type).catch(err=>log(type+" import failed: "+err.message));
+ });
+});
+
+// ======================================================
+// 6. AGE GROUP ANALYSIS
+// ======================================================
+
+function getAgePopulation(row){
+ const field=$("populationMeasure").value;
+ const col=field==="population1"?
+  state.ageFields.pop1:state.ageFields.pop2;
+
+ return col?num(row[col]):null;
+}
+
+function ageRowsFiltered(){
+ const f=state.ageFields;
+ return state.ageRows.filter(r=>{
+  const match=(field,id)=>
+   !$(id).value||norm(r[field])===norm($(id).value);
+
+  return match(f.region,"region")&&
+   match(f.district,"district")&&
+   match(f.ward,"ward");
+ });
+}
+
+function updateAgeAnalytics(){
+ if(!state.ageRows.length)return;
+
+ const rows=ageRowsFiltered();
+ const ageField=state.ageFields.age;
+ const groups={};
+
+ rows.forEach(r=>{
+  const age=String(r[ageField]||"Unknown");
+  const p=getAgePopulation(r);
+  if(p!==null)groups[age]=(groups[age]||0)+p;
+ });
+
+ const labels=Object.keys(groups);
+ const values=Object.values(groups);
+ const total=values.reduce((a,b)=>a+b,0);
+
+ const getAgeNumber=label=>{
+  const m=String(label).match(/\d+/);
+  return m?Number(m[0]):null;
+ };
+
+ const young=values.reduce((sum,v,i)=>{
+  const a=getAgeNumber(labels[i]);
+  return sum+(a!==null&&a<15?v:0);
+ },0);
+
+ const working=values.reduce((sum,v,i)=>{
+  const a=getAgeNumber(labels[i]);
+  return sum+(a!==null&&a>=15&&a<65?v:0);
+ },0);
+
+ const older=values.reduce((sum,v,i)=>{
+  const a=getAgeNumber(labels[i]);
+  return sum+(a!==null&&a>=65?v:0);
+ },0);
+
+ $("mYoung").textContent=fmt(young);
+ $("mWorking").textContent=fmt(working);
+ $("mOlder").textContent=fmt(older);
+ $("mDependency").textContent=working?
+  fmt((young+older)/working*100)+"%":"—";
+
+ $("mAgeGroups").textContent=labels.length;
+ $("mPopulation").textContent=fmt(total);
+
+ drawAgeCharts(labels,values,young,working,older);
+
+ return {labels,values,total,young,working,older};
+}
+
+function drawAgeCharts(labels,values,young,working,older){
+ destroyChart("age");
+ destroyChart("pyramid");
+
+ state.charts.age=new Chart($("ageChart"),{
+  type:"bar",
+  data:{
+   labels,
+   datasets:[{
+    data:values,
+    backgroundColor:"#39bdb5",
+    borderRadius:3
+   }]
+  },
+  options:{
+   responsive:true,
+   plugins:{legend:{display:false}},
+   scales:{
+    x:{ticks:{color:"#b9ccdf",maxRotation:50}},
+    y:{ticks:{color:"#b9ccdf"}}
+   }
+  }
+ });
+
+ state.charts.pyramid=new Chart($("pyramidChart"),{
+  type:"bar",
+  data:{
+   labels:["0–14","15–64","65+"],
+   datasets:[{
+    label:"Population",
+    data:[young,working,older],
+    backgroundColor:["#45b8bd","#4d91da","#e9a95c"]
+   }]
+  },
+  options:{
+   indexAxis:"y",
+   plugins:{legend:{display:false}},
+   scales:{
+    x:{ticks:{color:"#b9ccdf"}},
+    y:{ticks:{color:"#b9ccdf"}}
+   }
+  }
+ });
+}
+
+// ======================================================
+// 7. INDICATOR DATA MATCHING
+// ======================================================
+
+function featureKeys(f){
+ const p=f.properties||{};
+
+ return [
+  featureName(f),
+  prop(p,["feacode","ea_code"]),
+  prop(p,["settlement_name","hsettlement"]),
+  prop(p,["wardname","ward"]),
+  prop(p,["distname","district"]),
+  prop(p,["lganame","lga"])
+ ].filter(Boolean).map(norm);
+}
+
+function getPopulationForFeature(f){
+ const keys=featureKeys(f);
+ const rows=state.ageRows.filter(r=>{
+  const field=state.ageFields;
+  const values=[
+   r[field.settlement],
+   r[field.ward],
+   r[field.district],
+   r[field.region]
+  ].filter(Boolean).map(norm);
+
+  return values.some(v=>keys.includes(v));
+ });
+
+ if(!rows.length)return null;
+
+ return rows.reduce((sum,r)=>{
+  const v=getAgePopulation(r);
+  return sum+(v||0);
+ },0);
+}
+
+function findOtherRecord(f,type){
+ const keys=featureKeys(f);
+
+ return state.otherRows.filter(r=>{
+  if(type&&r._source!==type)return false;
+
+  const vals=Object.values(r).slice(0,10).map(norm);
+  return vals.some(v=>keys.includes(v));
+ });
+}
+
+function getFeatureValue(f){
+ const indicator=$("indicator").value;
+ const p=f.properties||{};
+
+ const direct=prop(p,[indicator,indicators[indicator]?.name]);
+ if(direct!==""&&num(direct)!==null)return num(direct);
+
+ if(indicator==="population"){
+  return getPopulationForFeature(f);
+ }
+
+ const sourceMap={
+  builtup:"land",
+  builtup_share:"land",
+  land_efficiency:"land",
+  road_density:"road",
+  employment:"housing",
+  flood:"environment",
+  tree_cover:"environment",
+  household_size:"housing",
+  population_change:"population"
+ };
+
+ const rows=findOtherRecord(f,sourceMap[indicator]);
+ if(rows.length){
+  const row=rows[0];
+  const aliasesByIndicator={
+   builtup:["builtup_ha","built_up_ha","builtup_area","built_up_area"],
+   builtup_share:["builtup_share","built_up_percentage"],
+   land_efficiency:["land_efficiency","population_per_ha"],
+   road_density:["road_density","km_per_km2"],
+   employment:["employment_rate","employment"],
+   flood:["flood_exposure","flood_percentage"],
+   tree_cover:["tree_cover","tree_canopy"],
+   household_size:["average_household_size","household_size"],
+   population_change:["population_change","growth_rate"]
+  };
+
+  const v=num(prop(row,aliasesByIndicator[indicator]||[indicator]));
+  if(v!==null)return v;
+ }
+
+ if(indicator==="population_density"){
+  const pop=getPopulationForFeature(f);
+  const area=Number(turf.area(f))/1000000;
+  return pop!==null&&area>0?pop/area:null;
+ }
+
+ if(indicator==="dependency"){
+  const profile=updateAgeAnalytics();
+  if(profile&&profile.working>0){
+   return (profile.young+profile.older)/profile.working*100;
+  }
+ }
+
+ return null;
+}
+
+// ======================================================
+// 8. CHOROPLETH MAPPING
+// ======================================================
+
+function classBreaks(values){
+ const sorted=[...values].sort((a,b)=>a-b);
+ if(!sorted.length)return [];
+
+ if($("classification").value==="equal"){
+  const min=sorted[0],max=sorted[sorted.length-1];
+  return [1,2,3,4].map(i=>min+(max-min)*i/5);
+ }
+
+ return [1,2,3,4].map(i=>
+  sorted[Math.min(sorted.length-1,Math.floor(i*sorted.length/5))]
+ );
+}
+
+const colours=[
+ "#d7eee8",
+ "#91d4c2",
+ "#43b4ad",
+ "#2987a5",
+ "#244e86"
+];
+
+function featureColour(v,breaks){
+ if(v===null||v===undefined)return "#536174";
+
+ const i=breaks.findIndex(b=>v<=b);
+ return colours[i<0?4:i];
+}
+
+function drawMap(){
+ if(state.boundaryLayer)map.removeLayer(state.boundaryLayer);
+ if(!state.boundaries)return;
+
+ const fs=getFeatures();
+ state.activeFeatures=fs;
+
+ const values=fs.map(getFeatureValue).filter(v=>v!==null);
+ const breaks=classBreaks(values);
+
+ state.boundaryLayer=L.geoJSON({
+  type:"FeatureCollection",
+  features:fs
+ },{
+  style:f=>{
+   const value=getFeatureValue(f);
+   const outline=$("mapStyle").value==="outline";
+
+   return {
+    color:"#b8d1e7",
+    weight:outline?1.2:.65,
+    fillColor:outline?"#1b344e":featureColour(value,breaks),
+    fillOpacity:outline?.08:.78
+   };
+  },
+  onEachFeature:(f,l)=>{
+   const value=getFeatureValue(f);
+   const p=f.properties||{};
+
+   l.bindPopup(`
+    <div style="min-width:180px;color:#17283a">
+    <b>${featureName(f)}</b><hr>
+    ${indicators[$("indicator").value]?.name||"Indicator"}:
+    <b>${value===null?"No matched data":fmt(value)}</b>
+    <br>${indicators[$("indicator").value]?.unit||""}
+    <hr>
+    Region: ${regionOf(f)||"Not available"}<br>
+    District: ${districtOf(f)||"Not available"}<br>
+    Ward: ${wardOf(f)||"Not available"}
+    </div>
+   `);
+
+   if($("showLabels").checked){
+    const c=l.getBounds().getCenter();
+    L.marker(c,{
+     interactive:false,
+     icon:L.divIcon({
+      className:"",
+      html:`<span style="color:white;background:#10243b;padding:2px 4px;border-radius:3px;font-size:9px">${featureName(f)}</span>`
+     })
+    }).addTo(state.boundaryLayer);
+   }
+  }
+ }).addTo(map);
+
+ if(!$("showBoundary").checked)map.removeLayer(state.boundaryLayer);
+
+ if(fs.length){
+  try{
+   map.fitBounds(state.boundaryLayer.getBounds(),{
+    padding:[15,15],maxZoom:11
+   });
+  }catch(e){}
+ }
+
+ updateLegend(breaks);
+ updateKpis(fs,values);
+}
+
+function updateLegend(breaks){
+ const labels=["Very low","Low","Moderate","High","Very high"];
+
+ $("legend").innerHTML=
+ `<b>${indicators[$("indicator").value].name}</b>
+ (${indicators[$("indicator").value].unit})<br>`+
+ labels.map((l,i)=>
+ `<span class="swatch" style="background:${colours[i]}"></span>
+ ${l}: ${breaks[i]===undefined?"—":fmt(breaks[i])}<br>`
+ ).join("");
+}
+
+// ======================================================
+// 9. KPI ANALYTICS
+// ======================================================
+
+function updateKpis(fs,values){
+ const mean=values.length?
+  values.reduce((a,b)=>a+b,0)/values.length:null;
+
+ $("kUnits").textContent=fmt(fs.length);
+ $("kPopulation").textContent=fmt(
+  fs.reduce((sum,f)=>sum+(getPopulationForFeature(f)||0),0)
+ );
+ $("kMean").textContent=fmt(mean);
+
+ $("kCoverage").textContent=fs.length?
+  Math.round(values.length/fs.length*100)+"%":"0%";
+
+ $("mSettlements").textContent=state.ageFields.settlement?
+  new Set(state.ageRows.map(r=>r[state.ageFields.settlement]).filter(Boolean)).size:"—";
+
+ $("mMissing").textContent=fs.length-values.length;
+
+ const built=fs.map(f=>getFeatureValue(f));
+ if($("indicator").value==="builtup"){
+  $("mBuiltup").textContent=fmt(values.reduce((a,b)=>a+b,0));
+ }
+ if($("indicator").value==="road_density"){
+  $("mRoad").textContent=fmt(mean);
+ }
+ if($("indicator").value==="population_density"){
+  $("mDensity").textContent=fmt(mean);
+ }
+ if($("indicator").value==="land_efficiency"){
+  $("mLandEfficiency").textContent=fmt(mean);
+ }
+
+ updateSummaryTable(fs);
+ updateCharts(values,fs);
+ updateQuality(fs,values);
+}
+
+function updateSummaryTable(fs){
+ const rows=fs.slice(0,100).map(f=>{
+  const value=getFeatureValue(f);
+  return `<tr>
+   <td>${featureName(f)}</td>
+   <td>${value===null?"—":fmt(value)}</td>
+  </tr>`;
+ }).join("");
+
+ $("summaryTable").innerHTML=rows||
+  '<tr><td colspan="2">No geographic units available</td></tr>';
+}
+
+// ======================================================
+// 10. CHARTS
+// ======================================================
+
+function destroyChart(id){
+ if(state.charts[id]){
+  state.charts[id].destroy();
+  delete state.charts[id];
+ }
+}
+
+function updateCharts(values,fs){
+ destroyChart("distribution");
+ destroyChart("comparison");
+ destroyChart("coverage");
+ destroyChart("urban");
+
+ const bins=[0,0,0,0,0];
+ const breaks=classBreaks(values);
+
+ values.forEach(v=>{
+  const i=breaks.findIndex(b=>v<=b);
+  bins[i<0?4:i]++;
+ });
+
+ state.charts.distribution=new Chart($("distributionChart"),{
+  type:"bar",
+  data:{
+   labels:["Very low","Low","Moderate","High","Very high"],
+   datasets:[{
+    data:bins,
+    backgroundColor:colours,
+    borderRadius:3
+   }]
+  },
+  options:{
+   plugins:{legend:{display:false}},
+   scales:{
+    x:{ticks:{color:"#aebed0"}},
+    y:{ticks:{color:"#aebed0"}}
+   }
+  }
+ });
+
+ const top=fs.map(f=>({
+  name:featureName(f),
+  value:getFeatureValue(f)
+ })).filter(x=>x.value!==null)
+  .sort((a,b)=>b.value-a.value).slice(0,10);
+
+ state.charts.comparison=new Chart($("comparisonChart"),{
+  type:"bar",
+  data:{
+   labels:top.map(x=>x.name),
+   datasets:[{
+    data:top.map(x=>x.value),
+    backgroundColor:"#42b9b4"
+   }]
+  },
+  options:{
+   indexAxis:"y",
+   plugins:{legend:{display:false}},
+   scales:{
+    x:{ticks:{color:"#aebed0"}},
+    y:{ticks:{color:"#c3d4e5"}}
+   }
+  }
+ });
+
+ state.charts.coverage=new Chart($("coverageChart"),{
+  type:"doughnut",
+  data:{
+   labels:["Matched","Missing"],
+   datasets:[{
+    data:[values.length,Math.max(0,fs.length-values.length)],
+    backgroundColor:["#35c4a7","#e5a24d"]
+   }]
+  },
+  options:{
+   plugins:{legend:{labels:{color:"#d6e4f3"}}}
+  }
+ });
+
+ state.charts.urban=new Chart($("urbanChart"),{
+  type:"bar",
+  data:{
+   labels:["Built-up","Road density","Employment","Tree cover"],
+   datasets:[{
+    data:[
+     meanFor("land","builtup_ha"),
+     meanFor("road","road_density"),
+     meanFor("housing","employment_rate"),
+     meanFor("environment","tree_cover")
+    ],
+    backgroundColor:"#42aeb2"
+   }]
+  },
+  options:{
+   plugins:{legend:{display:false}},
+   scales:{
+    x:{ticks:{color:"#b5c9dc"}},
+    y:{ticks:{color:"#b5c9dc"}}
+   }
+  }
+ });
+}
+
+function meanFor(source,field){
+ const vals=state.otherRows.filter(r=>r._source===source)
+  .map(r=>num(prop(r,[field])))
+  .filter(v=>v!==null);
+
+ return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+}
+
+// ======================================================
+// 11. DATA QUALITY
+// ======================================================
+
+function updateQuality(fs,values){
+ const missing=fs.length-values.length;
+ const coverage=fs.length?values.length/fs.length*100:0;
+
+ const duplicates=state.ageRows.length-
+  new Set(state.ageRows.map(r=>
+   Object.values(r).slice(0,5).join("|")
+  )).size;
+
+ $("qualityReport").innerHTML=`
+ <b>DATA QUALITY ASSESSMENT</b><br><br>
+ Geographic features: ${fs.length}<br>
+ Matched indicator values: ${values.length}<br>
+ Missing / unmatched: ${missing}<br>
+ Data coverage: ${fmt(coverage)}%<br>
+ Age dataset rows: ${state.ageRows.length}<br>
+ Approximate duplicate age records: ${duplicates}<br><br>
+ <b>Interpretation:</b><br>
+ ${coverage<50?"Low geographic matching. Check identifiers and boundary names.":coverage<90?"Moderate matching. Review missing geographic units.":"High matching coverage. Validate source quality before publication."}
+ `;
+
+ $("qualityReport").className=coverage>=90?"notice good":"notice";
+}
+
+// ======================================================
+// 12. CENTROIDS AND GRID
+// ======================================================
+
+function drawCentroids(){
+ if(state.pointLayer)map.removeLayer(state.pointLayer);
+ if(!$("showPoints").checked||!state.boundaries)return;
+
+ state.pointLayer=L.layerGroup();
+
+ getFeatures().forEach(f=>{
+  try{
+   const c=turf.centroid(f).geometry.coordinates;
+   L.circleMarker([c[1],c[0]],{
+    radius:4,
+    color:"#ffb45b",
+    fillOpacity:.85
+   }).bindTooltip(featureName(f)).addTo(state.pointLayer);
+  }catch(e){}
+ });
+
+ state.pointLayer.addTo(map);
+}
+
+function drawGrid(){
+ if(state.gridLayer)map.removeLayer(state.gridLayer);
+ if(!$("showGrid").checked)return;
+
+ const size=Number($("gridSize").value);
+ const bounds=map.getBounds();
+
+ try{
+  const grid=turf.squareGrid(
+   turf.bboxPolygon([
+    bounds.getWest(),
+    bounds.getSouth(),
+    bounds.getEast(),
+    bounds.getNorth()
+   ]),
+   size,
+   {units:"kilometers"}
+  );
+
+  state.gridLayer=L.geoJSON(grid,{
+   style:{
+    color:"#d0e1f0",
+    weight:.5,
+    fillOpacity:0.01,
+    opacity:.4
+   }
+  }).addTo(map);
+
+ }catch(e){
+  log("Grid error: "+e.message);
+ }
+}
+
+// ======================================================
+// 13. MAIN ANALYSIS
+// ======================================================
+
+function runAnalysis(){
+ if(!state.boundaries){
+  $("kUnits").textContent="0";
+  $("kCoverage").textContent="0%";
+  return;
+ }
+
+ drawMap();
+ drawCentroids();
+
+ if($("showGrid").checked)drawGrid();
+
+ updateAgeAnalytics();
+
+ $("systemStatus").textContent="ANALYSIS UPDATED";
+
+ log(
+  `Analysis updated.\n`+
+  `Geographic units: ${getFeatures().length}\n`+
+  `Age records: ${state.ageRows.length}\n`+
+  `Other records: ${state.otherRows.length}\n`+
+  `Indicator: ${$("indicator").value}\n`+
+  `Year: ${$("year").value}`
+ );
+}
+
+$("runAnalysis").onclick=runAnalysis;
+
+[
+ "indicator","classification","showBoundary","showLabels",
+ "showPoints","geoLevel"
+].forEach(id=>{
+ $(id).addEventListener("change",runAnalysis);
+});
+
+$("theme").onchange=()=>{
+ const theme=$("theme").value;
+ const defaults={
+  population:"population",
+  housing:"household_size",
+  land:"builtup",
+  economy:"employment",
+  transport:"road_density",
+  environment:"flood",
+  health:"flood"
+ };
+ $("indicator").value=defaults[theme];
+ runAnalysis();
+};
+
+$("showGrid").onchange=drawGrid;
+$("gridSize").onchange=drawGrid;
+$("mapStyle").onchange=runAnalysis;
+
+$("populationMeasure").onchange=()=>{
+ updateAgeAnalytics();
+ runAnalysis();
+};
+
+// ======================================================
+// 14. TABS
+// ======================================================
+
+document.querySelectorAll(".tab").forEach(tab=>{
+ tab.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+
+  ["overview","demographic","urban","quality"].forEach(name=>{
+   $(name+"Tab").classList.toggle("hidden",name!==tab.dataset.tab);
+  });
+
+  setTimeout(()=>{
+   Object.values(state.charts).forEach(c=>c.resize());
+  },50);
+ };
+});
+
+// ======================================================
+// 15. EXPORTS
+// ======================================================
+
+function downloadFile(name,content,type){
+ const blob=new Blob([content],{type});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download=name;
+ a.click();
+ URL.revokeObjectURL(url);
+}
+
+$("exportCSV").onclick=()=>{
+ const fs=getFeatures();
+
+ const rows=fs.map(f=>({
+  geographic_unit:featureName(f),
+  region:regionOf(f),
+  district:districtOf(f),
+  ward:wardOf(f),
+  enumeration_area:eaOf(f),
+  indicator:$("indicator").value,
+  value:getFeatureValue(f),
+  year:$("year").value
+ }));
+
+ downloadFile(
+  "Gambia_Urban_Indicator_Analysis.csv",
+  Papa.unparse(rows),
+  "text/csv"
+ );
+};
+
+$("exportGeo").onclick=()=>{
+ if(!state.boundaries)return alert("Upload boundaries first.");
+
+ const geo={
+  type:"FeatureCollection",
+  features:getFeatures()
+ };
+
+ downloadFile(
+  "Gambia_Filtered_Geographic_Boundaries.geojson",
+  JSON.stringify(geo,null,2),
+  "application/geo+json"
+ );
+};
+
+$("exportAge").onclick=()=>{
+ if(!state.ageRows.length)return alert("Upload age-group workbook first.");
+
+ downloadFile(
+  "Gambia_Age_Group_Data.csv",
+  Papa.unparse(state.ageRows),
+  "text/csv"
+ );
+};
+
+$("exportReport").onclick=()=>{
+ const fs=getFeatures();
+ const vals=fs.map(getFeatureValue).filter(v=>v!==null);
+ const mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+
+ const report={
+  title:"Gambia Urban Data Analytics",
+  generated:new Date().toISOString(),
+  year:$("year").value,
+  indicator:$("indicator").value,
+  geographic_units:fs.length,
+  matched_values:vals.length,
+  missing_values:fs.length-vals.length,
+  mean_indicator:mean,
+  age_dataset_records:state.ageRows.length,
+  additional_records:state.otherRows.length,
+  warning:"Statistics reflect uploaded data and are not independently validated."
+ };
+
+ downloadFile(
+  "Gambia_Urban_Analytics_Summary.json",
+  JSON.stringify(report,null,2),
+  "application/json"
+ );
+};
+
+// ======================================================
+// 16. DEMONSTRATION MODE
+// ======================================================
+
+function loadDemo(){
+ const demoValues=[
+  ["Banjul",1850],
+  ["Kanifing",2300],
+  ["Brikama",950],
+  ["Kerewan",450],
+  ["Mansakonko",380],
+  ["Kuntaur",320],
+  ["Janjanbureh",410],
+  ["Basse",520]
+ ];
+
+ if(!state.boundaries){
+  alert("Upload Gambia boundaries before using geographic analysis.");
+  return;
+ }
+
+ // Demonstration is not used to replace real source statistics.
+ state.demo=true;
+ log("Demo mode selected. Use actual datasets for official analysis.");
+ runAnalysis();
+}
+
+// ======================================================
+// 17. INITIALISATION
+// ======================================================
+
+$("mapSize").onchange=()=>{
+ $("map").style.height=$("mapSize").value==="large"?"750px":"590px";
+ setTimeout(()=>map.invalidateSize(),150);
+};
+
+map.on("moveend",()=>{
+ if($("showGrid").checked)drawGrid();
+});
+
+map.fitBounds(GAMBIA_BOUNDS);
+
+$("systemStatus").textContent="READY FOR GAMBIA DATA";
+
+log(
+ "GBoS GEOAI ready.\n"+
+ "1. Upload Gambia boundary GeoJSON.\n"+
+ "2. Upload population and age-group Excel data.\n"+
+ "3. Upload supporting thematic datasets.\n"+
+ "4. Select geography and indicator.\n"+
+ "5. Run analysis and export results."
+);
+</script>
+</body>
+</html>
